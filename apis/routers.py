@@ -71,5 +71,4 @@ async def read_item(teke_diamond_data: TakeDiamondModel):
     item_id = teke_diamond_data.item_id
     user_id = teke_diamond_data.user_id
     server_id = teke_diamond_data.server_id
-    take_diamond_data = await take_diamond(user_id, item_id, server_id)
-    return take_diamond_data
+    return await take_diamond(user_id, item_id, server_id)

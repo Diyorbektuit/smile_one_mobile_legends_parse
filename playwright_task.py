@@ -1,5 +1,4 @@
 import os
-import asyncio
 import logging
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
 
@@ -83,7 +82,6 @@ class AsyncPlaywrightTask:
         await self.page.get_by_role("textbox", name="USER ID").fill(str(user_id))
         await self.page.get_by_role("textbox", name="ZONE ID").fill(str(server_id))
         await self.page.locator("#smileone-notifi-cancel").click()
-        await asyncio.sleep(2)
 
         pack_ids = {
             1: "32 2590", 2: "32 2591", 3: "32 2592", 4: "32 2593",

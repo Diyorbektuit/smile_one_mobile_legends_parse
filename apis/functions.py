@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from security import SECURITY
 from playwright_task import AsyncPlaywrightTask
 
@@ -14,4 +15,5 @@ async def take_diamond(user_id: int, item_id: int, server_id: int):
         await py_task.close_browser()
         return {"success": True}
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        await py_task.close_browser()
+        raise HTTPException(status_code=400, detail=f"Transaction error: {str(e)}")
