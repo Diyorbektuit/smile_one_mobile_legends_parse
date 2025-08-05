@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Header, HTTPException, status
 
 from apis.schema import TakeDiamondModel
 from apis.functions import take_diamond
+from security import SECURITY
 
 router = APIRouter()
 
@@ -67,7 +68,12 @@ async def read_item():
 
 
 @router.post("/items/")
-async def read_item(teke_diamond_data: TakeDiamondModel):
+async def read_item(
+        teke_diamond_data: TakeDiamondModel,
+        x_api_key: str = Header(..., alias="X-API-KEY")
+):
+    if x_api_key != SECURITY.X_API_KEY:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
     item_id = teke_diamond_data.item_id
     user_id = teke_diamond_data.user_id
     server_id = teke_diamond_data.server_id
