@@ -89,6 +89,8 @@ class AsyncPlaywrightTask:
             9: "32 7", 10: "32 8", 11: "32 9", 12: "33 0", 13: "33 3"
         }
 
+        if pack_id not in pack_ids:
+            raise ValueError("❌ Pack ID noto‘g‘ri!")
         print(f"📦 Pack tanlangan: {pack_ids[pack_id]}")
         is_break = False
         while not is_break:
