@@ -1,3 +1,4 @@
+import asyncio
 import os
 import logging
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
@@ -77,11 +78,23 @@ class AsyncPlaywrightTask:
             return True
 
     async def buy_mobile_legends_diamonds(self, pack_id: int, user_id: int, server_id: int):
+        logging.info("➡️ Sotib olish sahifasiga o'tilmoqda...")
         await self.page.goto("https://www.smile.one/merchant/mobilelegends")
 
+        logging.info(f"🆔 USER ID: {user_id}, SERVER ID: {server_id}")
         await self.page.get_by_role("textbox", name="USER ID").fill(str(user_id))
         await self.page.get_by_role("textbox", name="ZONE ID").fill(str(server_id))
-        await self.page.locator("#smileone-notifi-cancel").click()
+
+        if await self.page.locator("#smileone-notifi-cancel").is_visible():
+            logging.info("🔔 Oldingi bildirishnoma bekor qilinmoqda.")
+            await self.page.locator("#smileone-notifi-cancel").click()
+
+        if await self.page.locator(".smileOneAlert-popUpheader").is_visible():
+            logging.error("❌ User ID yoki Server ID noto‘g‘ri!")
+            raise ValueError("❌ User ID yoki Server ID noto‘g‘ri!")
+
+        logging.info("✅ User ID va Server ID to‘g‘ri kiritildi.")
+        await asyncio.sleep(2)
 
         pack_ids = {
             1: "32 2590", 2: "32 2591", 3: "32 2592", 4: "32 2593",
@@ -90,34 +103,66 @@ class AsyncPlaywrightTask:
         }
 
         if pack_id not in pack_ids:
-            raise ValueError("❌ Pack ID noto‘g‘ri!")
-        print(f"📦 Pack tanlangan: {pack_ids[pack_id]}")
-        is_break = False
-        while not is_break:
-            await self.page.locator(f"[id=\"\\{pack_ids[pack_id]}\"]").get_by_role("emphasis").nth(1).click()
-            if await self.page.locator(f"[id=\"\\{pack_ids[pack_id]}\"]").is_visible():
-                is_break = True
+            logging.error(f"❌ Noto‘g‘ri `pack_id` tanlandi: {pack_id}")
+            raise ValueError("❌ Noto‘g‘ri `pack_id` tanlandi.")
 
-        if await self.page.locator(".smileOneAlert-popUpheader").is_visible():
-            raise ValueError("❌ User ID yoki Server ID noto‘g‘ri!")
+        pack_selector = f"[id=\"\\{pack_ids[pack_id]}\"]"
+        logging.info(f"🎯 Pack tanlanmoqda: ID={pack_id}, selector={pack_selector}")
 
-        # 💳 To‘lov usuli tanlash (birinchi variant)
+        try:
+            button = self.page.locator(pack_selector).first
+            await button.wait_for(timeout=5000)
+            await button.scroll_into_view_if_needed()
+            await button.hover()
+            await button.click()
+            logging.info(f"✅ Pack {pack_id} tugmasi bosildi.")
+        except PlaywrightTimeoutError:
+            logging.error(f"❌ Pack '{pack_ids[pack_id]}' topilmadi sahifada!")
+            raise ValueError(f"❌ Pack '{pack_ids[pack_id]}' topilmadi sahifada!")
+
+        await self.page.wait_for_timeout(1500)
+
+        if await self.is_read_button_visible():
+            logging.info("🔘 Terms & Conditions popup chiqdi.")
+            await self.accept_terms_popup_if_visible()
+
+        logging.info("💳 To‘lov usuli tanlanmoqda...")
         await self.page.locator(".payment-method-left").first.click()
 
-        # 🛒 Sotib olish tugmasi
-        await self.page.locator("span", has_text="Comprar agora").click()
+        logging.info("🛒 'Comprar agora' tugmasi bosilmoqda...")
+        try:
+            await self.page.locator("span", has_text="Comprar agora").click()
+            logging.info("✅ Xarid qilish bosildi.")
+        except PlaywrightTimeoutError:
+            logging.error("❌ 'Comprar agora' tugmasi bosilmadi — ustida boshqa element turgan bo'lishi mumkin.")
+            raise
 
-        # ⚠️ Notifikatsiya bekor qilish (agar chiqsa)
         if await self.page.locator("#smileone-notifi-cancel").is_visible():
+            logging.info("ℹ️ Bildirishnoma mavjud, yopilmoqda.")
             await self.page.locator("#smileone-notifi-cancel").click()
 
-        # ✅ To‘lov muvaffaqiyatli bo‘lganini tekshirish
+        logging.info("📦 To‘lov yakunlanmoqda...")
         try:
             await self.page.get_by_text("Pagamento com sucesso!").wait_for(timeout=5000)
-            print("✅ To‘lov muvaffaqiyatli yakunlandi.")
+            logging.info("✅ To‘lov muvaffaqiyatli yakunlandi.")
         except PlaywrightTimeoutError:
+            logging.error("❌ To‘lov yakunlanmadi.")
             raise Exception("❌ To‘lovda xatolik yoki muvaffaqiyatli bo‘lmagan.")
 
-        # 🔁 Davom etish
+        logging.info("🔁 Davom etish uchun 'Continuar a comprar' tugmasi bosilmoqda...")
         await self.page.get_by_role("link", name="Continuar a comprar").click()
+
+    async def is_read_button_visible(self) -> bool:
+        return await self.page.locator("#readbutton").is_visible()
+
+    async def accept_terms_popup_if_visible(self):
+        read_button = self.page.locator("#readbutton")
+        if await read_button.is_visible():
+            print("⚠️ 'I have read' tugmasi ko‘rindi — bosilmoqda...")
+            await read_button.scroll_into_view_if_needed()
+            await read_button.click()
+            await self.page.wait_for_timeout(500)  # modal yopilishi uchun ozgina kutish
+            print("✅ 'I have read' tugmasi bosildi va yopildi.")
+        else:
+            print("ℹ️ 'I have read' tugmasi mavjud emas — davom etiladi.")
 
