@@ -59,6 +59,10 @@ items_list =[
     {
         'id': 13,
         'name': 'Passagem do crepúsculo'
+    },
+    {
+        'id': 14,
+        'name': 'Passe Semanal de Diamante'
     }
 ]
 
