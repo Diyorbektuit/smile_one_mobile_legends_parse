@@ -114,14 +114,14 @@ class AsyncPlaywrightTask:
 
         try:
             button = self.page.locator(pack_selector).first
-            await button.wait_for(timeout=5000)
+            await button.wait_for(timeout=2000)
             await button.scroll_into_view_if_needed()
             await button.hover()
             await button.click()
             logging.info(f"✅ Pack {pack_id} tugmasi bosildi.")
         except PlaywrightTimeoutError:
             logging.error(f"❌ Pack '{pack_ids[pack_id]}' topilmadi sahifada!")
-            raise ValueError(f"❌ Pack '{pack_ids[pack_id]}' topilmadi sahifada!")
+            raise ValueError(f"❌ User ID yoki Server ID noto‘g‘ri bo'lishi mumkin!")
 
         await self.page.wait_for_timeout(1500)
 
