@@ -2,5 +2,4 @@
 .env
 logs
 test.db
-session.json
 __pycache__

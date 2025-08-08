@@ -23,6 +23,7 @@ class AsyncPlaywrightTask:
         self.playwright_instance = None
         self.browser = None
         self.page = None
+        self.popup_page = None
 
     async def init_browser(self):
         self.playwright_instance = await async_playwright().start()
@@ -52,6 +53,8 @@ class AsyncPlaywrightTask:
             page1 = await page1_info.value
         except PlaywrightTimeoutError:
             raise Exception("❌ VK popup ochilmadi!")
+
+        self.popup_page = page1
 
         await page1.locator("label").filter(has_text="Email").click()
         await page1.get_by_role("textbox", name="Email or login").fill(email)
@@ -165,4 +168,22 @@ class AsyncPlaywrightTask:
             print("✅ 'I have read' tugmasi bosildi va yopildi.")
         else:
             print("ℹ️ 'I have read' tugmasi mavjud emas — davom etiladi.")
+
+    # async def continue_as_if_needed(self):
+    #     print("🔎 'Продолжить как ...' tugmasi bor yo'qmi tekshirilmoqda...")
+    #     """
+    #     Agar 'Продолжить как ...' tugmasi mavjud bo‘lsa, uni bosib davom etadi.
+    #     """
+    #     continue_button = self.popup_page.locator("[data-test-id='continue-as-button']")
+    #     if await continue_button.is_visible():
+    #         logging.info("➡️ 'Продолжить как ...' tugmasi mavjud — bosilmoqda.")
+    #         await continue_button.scroll_into_view_if_needed()
+    #         await continue_button.click()
+    #         await self.popup_page.wait_for_timeout(1000)
+    #         logging.info("✅ 'Продолжить как ...' tugmasi bosildi.")
+    #         return True
+    #     else:
+    #         logging.info("ℹ️ 'Продолжить как ...' tugmasi mavjud emas — davom etiladi.")
+    #         await asyncio.sleep(100)
+    #         return False
 
