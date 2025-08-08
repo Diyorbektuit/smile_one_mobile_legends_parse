@@ -16,4 +16,4 @@ async def take_diamond(user_id: int, item_id: int, server_id: int):
         return {"success": True}
     except Exception as e:
         await py_task.close_browser()
-        raise HTTPException(status_code=400, detail=f"Transaction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"{str(e)}")
