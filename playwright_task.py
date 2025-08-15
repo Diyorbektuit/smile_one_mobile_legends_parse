@@ -112,6 +112,7 @@ class AsyncPlaywrightTask:
 
         pack_selector = f"[id=\"\\{pack_ids[pack_id]}\"]"
         logging.info(f"🎯 Pack tanlanmoqda: ID={pack_id}, selector={pack_selector}")
+        await asyncio.sleep(1)
 
         try:
             button = self.page.locator(pack_selector).first
