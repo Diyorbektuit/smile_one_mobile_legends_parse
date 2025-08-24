@@ -97,7 +97,6 @@ class AsyncPlaywrightTask:
             raise ValueError("❌ User ID yoki Server ID noto‘g‘ri!")
 
         logging.info("✅ User ID va Server ID to‘g‘ri kiritildi.")
-        await asyncio.sleep(2)
 
         pack_ids = {
             1: "32 2590", 2: "32 2591", 3: "32 2592", 4: "32 2593",
@@ -112,7 +111,7 @@ class AsyncPlaywrightTask:
 
         pack_selector = f"[id=\"\\{pack_ids[pack_id]}\"]"
         logging.info(f"🎯 Pack tanlanmoqda: ID={pack_id}, selector={pack_selector}")
-        await asyncio.sleep(1)
+        await asyncio.sleep(3)
 
         try:
             button = self.page.locator(pack_selector).first
