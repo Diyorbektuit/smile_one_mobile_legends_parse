@@ -17,8 +17,8 @@ async def take_diamond(user_id: int, item_id: int, server_id: int):
     except PlaywrightError as e:
         await py_task.close_browser()
         if e.code == "PAYMENT_NOT_FOUND":
-            return {"success": False, "message": e.message}
-        raise HTTPException(status_code=400, detail={"message": e.message, "code": e.code})
+            return {"success": False, "message": e.message, "code": e.code}
+        raise HTTPException(status_code=400, detail={"success": False, "message": e.message, "code": e.code})
     except Exception as e:
         await py_task.close_browser()
-        raise HTTPException(status_code=400, detail={"message": str(e), "code": "UNKNOWN_ERROR"})
+        return {"success": False, "message": str(e), "code": "UNKNOWN_ERROR"}
