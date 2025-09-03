@@ -18,6 +18,13 @@ logging.basicConfig(
 )
 
 
+class PlaywrightError(Exception):
+    def __init__(self, message: str, code: str):
+        self.message = message
+        self.code = code
+        super().__init__(self.message)
+
+
 class AsyncPlaywrightTask:
     def __init__(self):
         self.playwright_instance = None
@@ -52,7 +59,7 @@ class AsyncPlaywrightTask:
                 await self.page.get_by_role("listitem").filter(has_text="Войти в систему через VK").locator("div").click()
             page1 = await page1_info.value
         except PlaywrightTimeoutError:
-            raise Exception("❌ VK popup ochilmadi!")
+            raise PlaywrightError(message="❌ VK popup ochilmadi!", code="VK_POPUP_NOT_FOUND")
 
         self.popup_page = page1
 
@@ -65,7 +72,7 @@ class AsyncPlaywrightTask:
         try:
             await page1.locator("[data-test-id=\"continue-as-button\"]").click()
         except PlaywrightTimeoutError:
-            raise Exception("❌ VK login yakunlanmadi!")
+            raise PlaywrightError(message="❌ VK login yakunlanmadi!", code="VK_LOGIN_NOT_FOUND")
 
         await self.page.context.storage_state(path=SESSION_FILE)
         print("✅ Session saved to file.")
@@ -94,7 +101,7 @@ class AsyncPlaywrightTask:
 
         if await self.page.locator(".smileOneAlert-popUpheader").is_visible():
             logging.error("❌ User ID yoki Server ID noto‘g‘ri!")
-            raise ValueError("❌ User ID yoki Server ID noto‘g‘ri!")
+            raise PlaywrightError(message="❌ User ID yoki Server ID noto‘g‘ri!", code="USER_ID_OR_SERVER_ID_NOT_FOUND")
 
         logging.info("✅ User ID va Server ID to‘g‘ri kiritildi.")
 
@@ -107,7 +114,8 @@ class AsyncPlaywrightTask:
 
         if pack_id not in pack_ids:
             logging.error(f"❌ Noto‘g‘ri `pack_id` tanlandi: {pack_id}")
-            raise ValueError("❌ Noto‘g‘ri `pack_id` tanlandi.")
+            raise PlaywrightError(message="❌ Noto‘g‘ri `pack_id` tanlandi!", code="INVALID_PACK_ID")
+            return
 
         pack_selector = f"[id=\"\\{pack_ids[pack_id]}\"]"
         logging.info(f"🎯 Pack tanlanmoqda: ID={pack_id}, selector={pack_selector}")
@@ -122,7 +130,8 @@ class AsyncPlaywrightTask:
             logging.info(f"✅ Pack {pack_id} tugmasi bosildi.")
         except PlaywrightTimeoutError:
             logging.error(f"❌ Pack '{pack_ids[pack_id]}' topilmadi sahifada!")
-            raise ValueError(f"❌ User ID yoki Server ID noto‘g‘ri bo'lishi mumkin!")
+            raise PlaywrightError(message=f"❌ Pack '{pack_ids[pack_id]}' topilmadi sahifada!", code="PACK_NOT_FOUND")
+            return
 
         await self.page.wait_for_timeout(1500)
 
@@ -139,7 +148,8 @@ class AsyncPlaywrightTask:
             logging.info("✅ Xarid qilish bosildi.")
         except PlaywrightTimeoutError:
             logging.error("❌ 'Comprar agora' tugmasi bosilmadi — ustida boshqa element turgan bo'lishi mumkin.")
-            raise
+            raise PlaywrightError(message="❌ 'Comprar agora' tugmasi bosilmadi — ustida boshqa element turgan bo'lishi mumkin.", code="BUY_BUTTON_NOT_FOUND")
+            return
 
         if await self.page.locator("#smileone-notifi-cancel").is_visible():
             logging.info("ℹ️ Bildirishnoma mavjud, yopilmoqda.")
@@ -147,11 +157,12 @@ class AsyncPlaywrightTask:
 
         logging.info("📦 To‘lov yakunlanmoqda...")
         try:
-            await self.page.get_by_text("Pagamento com sucesso!").wait_for(timeout=5000)
+            await self.page.get_by_text("Pagamento com sucesso!").wait_for(timeout=15000)
             logging.info("✅ To‘lov muvaffaqiyatli yakunlandi.")
         except PlaywrightTimeoutError:
             logging.error("❌ To‘lov yakunlanmadi.")
-            raise Exception("❌ To‘lovda xatolik yoki muvaffaqiyatli bo‘lmagan.")
+            raise PlaywrightError(message="❌ To‘lov yakunlanmadi.", code="PAYMENT_NOT_FOUND")
+            return
 
         logging.info("🔁 Davom etish uchun 'Continuar a comprar' tugmasi bosilmoqda...")
         await self.page.get_by_role("link", name="Continuar a comprar").click()
@@ -169,22 +180,4 @@ class AsyncPlaywrightTask:
             print("✅ 'I have read' tugmasi bosildi va yopildi.")
         else:
             print("ℹ️ 'I have read' tugmasi mavjud emas — davom etiladi.")
-
-    # async def continue_as_if_needed(self):
-    #     print("🔎 'Продолжить как ...' tugmasi bor yo'qmi tekshirilmoqda...")
-    #     """
-    #     Agar 'Продолжить как ...' tugmasi mavjud bo‘lsa, uni bosib davom etadi.
-    #     """
-    #     continue_button = self.popup_page.locator("[data-test-id='continue-as-button']")
-    #     if await continue_button.is_visible():
-    #         logging.info("➡️ 'Продолжить как ...' tugmasi mavjud — bosilmoqda.")
-    #         await continue_button.scroll_into_view_if_needed()
-    #         await continue_button.click()
-    #         await self.popup_page.wait_for_timeout(1000)
-    #         logging.info("✅ 'Продолжить как ...' tugmasi bosildi.")
-    #         return True
-    #     else:
-    #         logging.info("ℹ️ 'Продолжить как ...' tugmasi mavjud emas — davom etiladi.")
-    #         await asyncio.sleep(100)
-    #         return False
 
